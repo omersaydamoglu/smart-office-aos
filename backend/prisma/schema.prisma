@@ -1,15 +1,293 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Smart Office (AOS) - Prisma şeması (Hafta 1-2: P0 çekirdeği)
+// Kargo, rezervasyon, acil durum, KVKK talepleri ilgili haftalarda eklenecek.
+// Zaman alanları UTC saklanır; Türkiye saati (Europe/Istanbul) yalnızca gösterimde dönüştürülür.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enum'lar
+// ---------------------------------------------------------------------------
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum VisitSource {
+  INVITED // çalışan daveti ile
+  WALK_IN // kiosk üzerinden davetsiz kayıt
+}
+
+// Ziyaret durum makinesi:
+// PLANNED -> CHECKED_IN -> CHECKED_OUT
+// PLANNED -> CANCELLED | EXPIRED
+enum VisitStatus {
+  PLANNED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  EXPIRED
+}
+
+enum InvitationStatus {
+  PENDING
+  SENT
+  CANCELLED
+  EXPIRED
+}
+
+enum QrTokenType {
+  CHECK_IN
+  CHECK_OUT
+}
+
+enum QrTokenStatus {
+  ACTIVE
+  USED
+  REVOKED
+  EXPIRED
+}
+
+enum ScanResult {
+  SUCCESS
+  REJECTED_INVALID // bilinmeyen/sahte/değiştirilmiş token
+  REJECTED_USED
+  REJECTED_EXPIRED
+  REJECTED_REVOKED
+  REJECTED_NOT_YET_VALID
+  REJECTED_INVALID_STATE // geçersiz sıra, ör. girişsiz çıkış
+  MANUAL_OVERRIDE // resepsiyonun gerekçeli manuel işlemi
+}
+
+// ---------------------------------------------------------------------------
+// Kullanıcı ve yetki
+// ---------------------------------------------------------------------------
+
+model Role {
+  id          String     @id @default(uuid())
+  name        String     @unique // ADMIN, RECEPTION, DEPT_MANAGER, EMPLOYEE
+  description String?
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  passwordHash    String // bcrypt/argon2 hash; düz metin parola asla saklanmaz
+  firstName       String
+  lastName        String
+  phone           String?
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  departmentId    String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  department        Department?    @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  managedDepartment Department[]   @relation("DepartmentManager")
+  roles             UserRole[]
+  sessions          Session[]
+  loginAttempts     LoginAttempt[]
+  hostedVisits      Visit[]        @relation("VisitHost")
+  scanLogs          QrScanLog[]
+  auditLogs         AuditLog[]
+
+  @@index([departmentId])
+  @@map("users")
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+// Refresh token oturumları: görüntüleme, iptal ve sonlandırma için
+model Session {
+  id               String    @id @default(uuid())
+  userId           String
+  refreshTokenHash String    @unique // refresh token'ın kendisi değil, özeti
+  userAgent        String?
+  ipAddress        String?
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// Giriş denemesi sınırlama için
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  email     String
+  userId    String?
+  ipAddress String?
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+  @@map("login_attempts")
+}
+
+// ---------------------------------------------------------------------------
+// Organizasyon
+// ---------------------------------------------------------------------------
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  managerId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  manager User?  @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  members User[] @relation("DepartmentMembers")
+
+  @@index([managerId])
+  @@map("departments")
+}
+
+// ---------------------------------------------------------------------------
+// Ziyaretçi çekirdeği
+// ---------------------------------------------------------------------------
+
+// Ziyaretçi kişisel veri içerir: saklama süresi ve anonimleştirme Hafta 7'de ele alınacak
+model Visitor {
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String?
+  phone     String?
+  company   String?
+  createdAt DateTime @default(now())
+
+  visits Visit[]
+
+  @@index([email])
+  @@map("visitors")
+}
+
+model Visit {
+  id             String      @id @default(uuid())
+  visitorId      String
+  hostId         String // ev sahibi çalışan
+  source         VisitSource @default(INVITED)
+  purpose        String
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  status         VisitStatus @default(PLANNED)
+  checkedInAt    DateTime?
+  checkedOutAt   DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  visitor    Visitor     @relation(fields: [visitorId], references: [id], onDelete: Restrict)
+  host       User        @relation("VisitHost", fields: [hostId], references: [id], onDelete: Restrict)
+  invitation Invitation?
+  qrTokens   QrToken[]
+
+  @@index([hostId, scheduledStart])
+  @@index([status, scheduledStart])
+  @@index([visitorId])
+  @@map("visits")
+}
+
+// Davetin gönderim durumu (davetsiz kayıtlarda yoktur)
+model Invitation {
+  id          String           @id @default(uuid())
+  visitId     String           @unique
+  status      InvitationStatus @default(PENDING)
+  sentAt      DateTime?
+  resendCount Int              @default(0)
+  cancelledAt DateTime?
+  createdAt   DateTime         @default(now())
+
+  visit Visit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@map("invitations")
+}
+
+// QR token: kendisi değil yalnızca SHA-256 özeti saklanır; QR içinde kişisel veri yoktur.
+// Tek kullanım, atomik güncellemeyle sağlanır:
+//   updateMany({ where: { id, status: 'ACTIVE', usedAt: null }, data: { status: 'USED', usedAt: now } })
+// ve etkilenen satır sayısı 1 değilse tarama reddedilir.
+model QrToken {
+  id         String        @id @default(uuid())
+  visitId    String
+  type       QrTokenType
+  tokenHash  String        @unique
+  validFrom  DateTime
+  validUntil DateTime
+  status     QrTokenStatus @default(ACTIVE)
+  usedAt     DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime      @default(now())
+
+  visit    Visit       @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  scanLogs QrScanLog[]
+
+  @@index([visitId, type])
+  @@index([status, validUntil])
+  @@map("qr_tokens")
+}
+
+// Her tarama denemesi kaydedilir (başarılı ya da reddedilen)
+model QrScanLog {
+  id          String      @id @default(uuid())
+  qrTokenId   String? // geçersiz/bilinmeyen token'larda boş kalır
+  scannedById String? // taramayı yapan resepsiyon kullanıcısı
+  scanType    QrTokenType
+  result      ScanResult
+  reason      String? // manuel işlemde zorunlu gerekçe
+  ipAddress   String?
+  createdAt   DateTime    @default(now())
+
+  qrToken   QrToken? @relation(fields: [qrTokenId], references: [id], onDelete: SetNull)
+  scannedBy User?    @relation(fields: [scannedById], references: [id], onDelete: SetNull)
+
+  @@index([qrTokenId])
+  @@index([createdAt])
+  @@map("qr_scan_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Denetim
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  action     String // ör. USER_CREATED, VISIT_CANCELLED, MANUAL_CHECKIN
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
