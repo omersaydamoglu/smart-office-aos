@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest --passWithNoTests",
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "db:seed": "node prisma/seed.js"
   },
   "keywords": [],
   "author": "",
