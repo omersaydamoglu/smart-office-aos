@@ -129,3 +129,15 @@ npm run dev
 ## Teslim Paketi
 
 Kaynak kod · Jira/GitHub Projects kayıtları · SRS, UML, ER · Swagger/OpenAPI ve veri sözlüğü · Test planı ve çıktıları · Güvenlik/gizlilik belgesi · Kullanıcı kılavuzu ve kurulum rehberi · Canlı demo, sunum ve final raporu
+## Tasarım ve UI/UX
+
+### Google Stitch Tasarımları
+
+- Mobil (Çalışan Portalı): https://stitch.withgoogle.com/projects/16392963363715010478
+- Web (Resepsiyon, Kiosk, Admin): https://stitch.withgoogle.com/projects/5439068229676821256
+
+### Ekran İçerik Listesi
+
+- [Ekran İçerik Listesi](docs/ui/ekran-icerik-listesi.md)
+
+> Not: Figma aktarımında teknik hata yaşandığı için tasarım referansları Google Stitch üzerinden paylaşılmaktadır.
