@@ -141,3 +141,7 @@ Kaynak kod · Jira/GitHub Projects kayıtları · SRS, UML, ER · Swagger/OpenAP
 - [Ekran İçerik Listesi](docs/ui/ekran-icerik-listesi.md)
 
 > Not: Figma aktarımında teknik hata yaşandığı için tasarım referansları Google Stitch üzerinden paylaşılmaktadır.
+
+Ayrıntılı kurulum ve sorun giderme rehberi: [docs/kurulum.md][kurulum-rehberi]
+
+[kurulum-rehberi]: docs/kurulum.md
