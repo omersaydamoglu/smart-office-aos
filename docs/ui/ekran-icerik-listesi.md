@@ -1,7 +1,7 @@
 # Smart Office (AOS) – Ekran İçerik Listesi (Wireframe Girdisi)
 
-> Durum: **Taslak v1** · Hazırlayan: Ömer · Çizecek: Nazlım (Figma)
-> Bu liste, her ekranda **neyin olacağını** söyler; **nasıl görüneceğine** karar vermek Figma çalışmasıdır. İlk hedef kaba kutular (wireframe), görsel cila sonradan.
+> Durum: **Taslak v1** · Hazırlayan: Ömer · Tasarım: Google Stitch (Figma aktarımı teknik hata nedeniyle yapılamadı)
+> Bu liste, her ekranda **neyin olacağını** söyler; **nasıl görüneceğine** karar vermek tasarım çalışmasıdır. İlk hedef kaba kutular (wireframe), görsel cila sonradan.
 > Kaynaklar: `docs/srs/srs.md` (Bölüm 5), `docs/srs/kullanici-hikayeleri.md`, `docs/api/api-sozlesmesi.md`, `docs/rol-yetki-matrisi.md`
 
 ## 1. Çizim kuralları
@@ -183,12 +183,14 @@ Büyük yazı, büyük dokunmatik butonlar, **her ekranda tek ana eylem**, **60 
 | 6 | Admin: genel bakış, kullanıcılar (diğerleri aynı tablo kalıbı) | ~45 dk |
 | 7 | Yönetici ekranları ve kalanlar | gerektiğinde |
 
-**Tamamlanma ölçütü (issue #14 ve #15):** Beş temel ekran için kutu seviyesinde çizim, durum varyantlarıyla birlikte; Figma bağlantısı README'de.
+**Tamamlanma ölçütü (issue #14 ve #15):** Beş temel ekran için kutu seviyesinde çizim, durum varyantlarıyla birlikte; Stitch proje bağlantıları README'de.
 
-## 5. Figma düzeni
+## 5. Tasarım düzeni (Google Stitch)
 
-- Dosya adı: **Smart Office (AOS)**
-- Sayfalar: `00 Bileşenler`, `01 Giriş`, `02 Admin`, `03 Resepsiyon`, `04 Kiosk`, `05 Çalışan`, `06 Yönetici`
-- Çerçeve adları: `Giriş / Hata – Kilit`, `Resepsiyon / QR – Başarılı`, `Kiosk / 6 Bilgilendirme` biçiminde
-- Paylaşım: ekip üyelerini e-postayla davet edin; “bağlantıya sahip herkes görüntüleyebilir” yerine **davet edilenler** tercih edilir (veriler sentetik de olsa)
-- Bağlantıyı `README.md` ve ilgili issue'lara ekleyin
+Figma aktarımı teknik hata nedeniyle yapılamadığı için tasarımlar Google Stitch üzerinden paylaşılır.
+
+- **Mobil (Çalışan Portalı):** https://stitch.withgoogle.com/projects/16392963363715010478
+- **Web (Resepsiyon, Kiosk, Admin):** https://stitch.withgoogle.com/projects/5439068229676821256
+- Ekran adları `Giriş / Hata – Kilit`, `Resepsiyon / QR – Başarılı`, `Kiosk / 6 Bilgilendirme` biçiminde verilir
+- Paylaşım: bağlantılar `README.md` ve ilgili issue'lara eklenir; ekip üyelerinin projeye erişebildiği kontrol edilir (veriler sentetik de olsa)
+- Figma'ya aktarım ileride yapılırsa sayfa düzeni: `00 Bileşenler`, `01 Giriş`, `02 Admin`, `03 Resepsiyon`, `04 Kiosk`, `05 Çalışan`, `06 Yönetici`
