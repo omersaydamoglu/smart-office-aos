@@ -179,7 +179,7 @@ Yanıt (`200`):
 
 Kullanıcıları sayfalı listeler.
 
-**Erişim:** `ADMIN`; `DEPARTMENT_MANAGER` yalnızca kendi departmanındaki kullanıcılar için. Resepsiyonun erişimi matriste belirtilen sınırlı operasyonel alanlarla kısıtlıdır.
+**Erişim:** `ADMIN`; `DEPT_MANAGER` yalnızca kendi departmanındaki kullanıcılar için. Resepsiyonun erişimi matriste belirtilen sınırlı operasyonel alanlarla kısıtlıdır.
 
 Örnek yanıt (`200`):
 
@@ -290,7 +290,7 @@ Kullanıcının rollerini değiştirir.
 
 ```json
 {
-  "roles": ["EMPLOYEE", "RECEPTIONIST"]
+  "roles": ["EMPLOYEE", "RECEPTION"]
 }
 ```
 
@@ -337,7 +337,7 @@ Departman bilgilerini günceller.
 
 Departman çalışanlarını sayfalı listeler.
 
-**Erişim:** `ADMIN`; ilgili departmanın `DEPARTMENT_MANAGER` rolü.
+**Erişim:** `ADMIN`; ilgili departmanın `DEPT_MANAGER` rolü.
 
 ---
 
@@ -349,7 +349,7 @@ Departman çalışanlarını sayfalı listeler.
 
 Giriş yapan kullanıcı kendi adına izin talebi oluşturur.
 
-**Erişim:** `ADMIN`, `DEPARTMENT_MANAGER`, `EMPLOYEE`, `RECEPTIONIST`.
+**Erişim:** `ADMIN`, `DEPT_MANAGER`, `EMPLOYEE`, `RECEPTION`.
 
 İstek:
 
@@ -393,7 +393,7 @@ Tek bir izin talebini görüntüler. Kaynak sahipliği ve departman kapsamı kon
 
 İzin talebini onaylar.
 
-**Erişim:** `ADMIN` veya kendi departmanındaki uygun talepler için `DEPARTMENT_MANAGER`.
+**Erişim:** `ADMIN` veya kendi departmanındaki uygun talepler için `DEPT_MANAGER`.
 
 İstek:
 
@@ -429,7 +429,7 @@ Kullanıcı kendi talebini, yalnızca iş akışının izin verdiği durumlarda 
 
 Ziyaretçi kaydı oluşturur.
 
-**Erişim:** `ADMIN`, `RECEPTIONIST`.
+**Erişim:** `ADMIN`, `RECEPTION`.
 
 İstek:
 
@@ -473,13 +473,13 @@ Ziyaretçi kaydını görüntüler. Kapsam kontrolü uygulanır.
 
 Ziyaretçi kaydının izin verilen alanlarını günceller.
 
-**Erişim:** `ADMIN`, `RECEPTIONIST`; diğer roller için ekipçe onaylanmış dar kapsam.
+**Erişim:** `ADMIN`, `RECEPTION`; diğer roller için ekipçe onaylanmış dar kapsam.
 
 ### 6.5 `POST /visitors/:id/check-in`
 
 Resepsiyon kimlik kontrolünden sonra ziyaretçinin girişini kaydeder.
 
-**Erişim:** `ADMIN`, `RECEPTIONIST`.
+**Erişim:** `ADMIN`, `RECEPTION`.
 
 İstek:
 
@@ -493,7 +493,7 @@ Resepsiyon kimlik kontrolünden sonra ziyaretçinin girişini kaydeder.
 
 Ziyaretçinin çıkışını kaydeder.
 
-**Erişim:** `ADMIN`, `RECEPTIONIST`.
+**Erişim:** `ADMIN`, `RECEPTION`.
 
 Giriş/çıkış işlemleri zaman damgası ve işlemi yapan kullanıcıyla audit log'a yazılır.
 
@@ -515,7 +515,7 @@ QR içinde kişisel veri bulunmaz. Sunucuda secret'ın güvenli özeti saklanır
 
 Yetkili ziyaretçi/işlem için tek kullanımlık QR token üretir.
 
-**Erişim:** `ADMIN`, `RECEPTIONIST`; diğer roller için yalnızca matriste açıkça izin verilmiş senaryolar.
+**Erişim:** `ADMIN`, `RECEPTION`; diğer roller için yalnızca matriste açıkça izin verilmiş senaryolar.
 
 İstek:
 
@@ -574,7 +574,7 @@ Bu endpoint'in doğrulama yapması token'ı tüketmez. Kullanımın tek seferlik
 
 QR token'ı iptal eder.
 
-**Erişim:** Token üzerinde kapsam yetkisi olan `ADMIN`, `RECEPTIONIST` veya ekipçe onaylanmış sahibi.
+**Erişim:** Token üzerinde kapsam yetkisi olan `ADMIN`, `RECEPTION` veya ekipçe onaylanmış sahibi.
 
 ### 7.5 QR hata kodları
 
@@ -755,7 +755,7 @@ const response = await fetch(`${API_BASE_URL}/auth/me`, {
 | 4 | Kiosk cihaz anahtarı | Sunucu tarafında secret; üretimde cihaz bazlı kimlik | Kiosk middleware, deployment |
 | 5 | ADMIN QR tarayabilir mi? | Evet; audit log zorunlu | QR endpoint yetkisi |
 | 6 | Departman yöneticisi kullanıcı oluşturabilir mi? | İlk sürümde hayır; ADMIN ile sınırlı | Kullanıcı endpoint'leri |
-| 7 | Ziyaretçi kaydını kim oluşturabilir? | ADMIN ve RECEPTIONIST | Ziyaretçi endpoint'leri |
+| 7 | Ziyaretçi kaydını kim oluşturabilir? | ADMIN ve RECEPTION | Ziyaretçi endpoint'leri |
 | 8 | İzin türleri ve durumları | Prisma şeması ve iş kurallarıyla birlikte kesinleştirilmeli | Leave request modeli |
 
 ---
@@ -791,5 +791,6 @@ const response = await fetch(`${API_BASE_URL}/auth/me`, {
 | Sürüm | Tarih | Açıklama |
 |---|---|---|
 | 0.1 | 2026-10-31 | İlk API sözleşmesi taslağı |
+| 0.2 | 2026-11-03 | Rol adları Prisma/seed ile eşitlendi: `RECEPTION`, `DEPT_MANAGER` |
 
 **Onay notu:** Endpoint'ler ve alanlar Prisma şeması, rol-yetki matrisi ve ekip kararlarıyla eşleştirildikten sonra sözleşme 1.0 sürümüne yükseltilmelidir.
