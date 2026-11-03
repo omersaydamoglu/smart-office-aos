@@ -23,9 +23,9 @@
 | Rol | Açıklama | Varsayılan kapsam |
 |---|---|---|
 | `ADMIN` | Sistem yöneticisi; kullanıcı, rol ve sistem yönetimi | Tüm sistem |
-| `DEPARTMENT_MANAGER` | Kendi departmanının operasyonlarını yöneten kullanıcı | Kendi departmanı |
+| `DEPT_MANAGER` | Kendi departmanının operasyonlarını yöneten kullanıcı | Kendi departmanı |
 | `EMPLOYEE` | Standart çalışan | Kendi kayıtları |
-| `RECEPTIONIST` | Resepsiyon ve ziyaretçi süreçlerini yürüten kullanıcı | Resepsiyon işlemleri; gerekli ziyaretçi kayıtları |
+| `RECEPTION` | Resepsiyon ve ziyaretçi süreçlerini yürüten kullanıcı | Resepsiyon işlemleri; gerekli ziyaretçi kayıtları |
 | `VISITOR` | Sistemde kullanıcı hesabı bulunmayan ziyaretçi | Yalnızca açıkça tanımlanmış kiosk/QR işlemleri |
 
 `VISITOR` bir uygulama rolü gibi listelenmiş olsa da normal kullanıcı hesabı ve oturumu yoktur. Ziyaretçi işlemleri sınırlı, ayrı kiosk/QR kurallarıyla korunur.
@@ -42,7 +42,7 @@
 
 Aşağıdaki tablo başlangıç yetki taslağıdır. “Kapsamlı” ifadesi, ilgili kapsam kontrolünün ayrıca uygulanması gerektiğini belirtir.
 
-| Kaynak / İşlem | `ADMIN` | `DEPARTMENT_MANAGER` | `EMPLOYEE` | `RECEPTIONIST` | `VISITOR` |
+| Kaynak / İşlem | `ADMIN` | `DEPT_MANAGER` | `EMPLOYEE` | `RECEPTION` | `VISITOR` |
 |---|---|---|---|---|---|
 | Kullanıcı listesini görüntüleme | Tümü | Kendi departmanı | Hayır | Sınırlı operasyonel | Hayır |
 | Kullanıcı detayını görüntüleme | Tümü | Kendi departmanı | Kendi kaydı | Görev için gerekli sınırlı alanlar | Hayır |
@@ -97,7 +97,7 @@ Yetkilendirme iki aşamada uygulanmalıdır:
 router.get(
   "/users",
   authenticate,
-  requireRole("ADMIN", "DEPARTMENT_MANAGER"),
+  requireRole("ADMIN", "DEPT_MANAGER"),
   userController.list
 );
 ```
@@ -130,7 +130,7 @@ if (!request) {
 
 const isOwner = request.userId === req.user.id;
 const isDepartmentManager =
-  req.user.roles.includes("DEPARTMENT_MANAGER") &&
+  req.user.roles.includes("DEPT_MANAGER") &&
   request.departmentId === req.user.departmentId;
 const isAdmin = req.user.roles.includes("ADMIN");
 
@@ -226,6 +226,7 @@ Aşağıdaki maddeler geliştirme başlamadan önce ekip ve danışmanla netleş
 | Sürüm | Tarih | Açıklama |
 |---|---|---|
 | 0.1 | 2026-10-31 | İlk RBAC ve kaynak kapsamı taslağı |
+| 0.2 | 2026-11-03 | Rol adları Prisma/seed ile eşitlendi: `RECEPTION`, `DEPT_MANAGER` |
 
 ---
 
