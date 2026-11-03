@@ -39,7 +39,7 @@ npm run dev
 ```
 Beklenen çıktılar:
 
-- `npm run db:seed`: `Roller hazir: ADMIN, RECEPTION, DEPT_MANAGER, EMPLOYEE` ve `Test admin hazir: admin@smartoffice.test`
+- `npm run db:seed`: `Roller hazir: ADMIN, RECEPTION, DEPT_MANAGER, EMPLOYEE`, `Departmanlar hazir: Genel, Bilgi Teknolojileri, Muhasebe` ve `Test kullanicilari hazir: admin@smartoffice.test, resepsiyon@smartoffice.test, yonetici@smartoffice.test, calisan@smartoffice.test`
 - `npm run dev`: `API 3000 portunda calisiyor`
 
 Tarayıcıda http://localhost:3000/api/health adresi `{"status":"ok"}` döndürmelidir.
@@ -55,11 +55,15 @@ npm run dev
 ```
 http://localhost:5173 adresinde sayfa açılmalıdır.
 
-### 2.5 Test kullanıcısı (yalnızca geliştirme)
-| Alan | Değer |
-|---|---|
-| E-posta | `admin@smartoffice.test` |
-| Parola | `Admin123!dev` |
+### 2.5 Test kullanıcıları (yalnızca geliştirme)
+| Rol | E-posta | Parola | Departman |
+|---|---|---|---|
+| `ADMIN` | `admin@smartoffice.test` | `Admin123!dev` | Genel |
+| `RECEPTION` | `resepsiyon@smartoffice.test` | `Test123!dev` | Genel |
+| `DEPT_MANAGER` | `yonetici@smartoffice.test` | `Test123!dev` | Bilgi Teknolojileri (yöneticisi) |
+| `EMPLOYEE` | `calisan@smartoffice.test` | `Test123!dev` | Bilgi Teknolojileri |
+
+Muhasebe departmanı boştur.
 
 ## 3. Günlük kullanım
 
