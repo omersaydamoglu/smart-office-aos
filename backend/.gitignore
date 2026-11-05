@@ -3,3 +3,7 @@ node_modules
 .env
 
 /generated/prisma
+# Authentication test cookies
+cookies.txt
+# Backup files
+*.backup
