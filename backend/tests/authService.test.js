@@ -12,6 +12,7 @@ jest.mock('../src/config/prisma', () => ({
     update: jest.fn(),
     updateMany: jest.fn(),
   },
+  $transaction: jest.fn(),
 }));
 
 jest.mock('../src/config/jwt', () => ({
@@ -44,6 +45,7 @@ describe('Authentication Service Tests', () => {
     prisma.session.create.mockResolvedValue({});
     prisma.session.update.mockResolvedValue({});
     prisma.session.updateMany.mockResolvedValue({ count: 1 });
+    prisma.$transaction.mockImplementation((callback) => callback(prisma));
   });
 
   test('Doğru bilgilerle giriş başarılı olmalı', async () => {
@@ -142,7 +144,10 @@ describe('Authentication Service Tests', () => {
 
     prisma.session.findUnique.mockResolvedValue({
       id: 'session-123',
+      userId: 'user-123',
       refreshTokenHash: hashToken(oldToken),
+      userAgent: 'jest',
+      ipAddress: '127.0.0.1',
       revokedAt: null,
       expiresAt: new Date(Date.now() + 86400000),
       user: {
@@ -161,17 +166,27 @@ describe('Authentication Service Tests', () => {
     expect(result.refreshToken).toBeDefined();
     expect(result.refreshToken).not.toBe(oldToken);
 
+    // Eski oturum iptal edilmeli
     expect(prisma.session.updateMany).toHaveBeenCalledWith({
       where: {
         id: 'session-123',
-        refreshTokenHash: hashToken(oldToken),
         revokedAt: null,
         expiresAt: {
           gt: expect.any(Date),
         },
       },
       data: {
-        refreshTokenHash: expect.any(String),
+        revokedAt: expect.any(Date),
+      },
+    });
+
+    // Yeni token için yeni oturum açılmalı
+    expect(prisma.session.create).toHaveBeenCalledWith({
+      data: {
+        userId: 'user-123',
+        refreshTokenHash: hashToken(result.refreshToken),
+        userAgent: 'jest',
+        ipAddress: '127.0.0.1',
         expiresAt: expect.any(Date),
       },
     });
@@ -202,6 +217,7 @@ describe('Authentication Service Tests', () => {
     ).rejects.toThrow('Geçersiz veya süresi dolmuş oturum.');
 
     expect(prisma.session.updateMany).toHaveBeenCalledTimes(1);
+    expect(prisma.session.create).not.toHaveBeenCalled();
   });
 
   test('Geçersiz refresh token reddedilmeli', async () => {
@@ -214,9 +230,10 @@ describe('Authentication Service Tests', () => {
     expect(prisma.session.updateMany).not.toHaveBeenCalled();
   });
 
-  test('İptal edilmiş oturum yenilenememeli', async () => {
+  test('İptal edilmiş token tekrar gelirse tüm oturumlar kapanmalı', async () => {
     prisma.session.findUnique.mockResolvedValue({
       id: 'session-123',
+      userId: 'user-123',
       revokedAt: new Date(),
       expiresAt: new Date(Date.now() + 86400000),
       user: {
@@ -229,7 +246,37 @@ describe('Authentication Service Tests', () => {
       refreshSession({ refreshToken: 'revoked-token' })
     ).rejects.toThrow('Geçersiz veya süresi dolmuş oturum.');
 
+    expect(prisma.session.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-123',
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: expect.any(Date),
+      },
+    });
+
+    expect(prisma.session.create).not.toHaveBeenCalled();
+  });
+
+  test('Süresi dolmuş oturum yenilenememeli', async () => {
+    prisma.session.findUnique.mockResolvedValue({
+      id: 'session-123',
+      userId: 'user-123',
+      revokedAt: null,
+      expiresAt: new Date(Date.now() - 1000),
+      user: {
+        status: 'ACTIVE',
+        roles: [],
+      },
+    });
+
+    await expect(
+      refreshSession({ refreshToken: 'expired-token' })
+    ).rejects.toThrow('Geçersiz veya süresi dolmuş oturum.');
+
     expect(prisma.session.updateMany).not.toHaveBeenCalled();
+    expect(prisma.session.create).not.toHaveBeenCalled();
   });
 
   test('Logout oturumu iptal etmeli', async () => {
