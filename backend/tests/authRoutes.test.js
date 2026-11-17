@@ -134,6 +134,24 @@ describe('Authentication Routes Integration Tests', () => {
 
       expect(response.headers['set-cookie']).toBeDefined();
     });
+    test('Geçersiz veya tekrar kullanılmış refresh token 401 dönmeli ve cookie silinmeli', async () => {
+      authService.refreshSession.mockRejectedValue(
+        new Error('Geçersiz veya süresi dolmuş oturum.')
+      );
+
+      const response = await request(app)
+        .post('/api/auth/refresh')
+        .set('Origin', 'http://localhost:5173')
+        .set('Cookie', 'refreshToken=reused-refresh-token');
+
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe(
+        'Oturum geçersiz veya süresi dolmuş.'
+      );
+      expect(response.headers['set-cookie'].join(';')).toMatch(
+        /refreshToken=;/
+      );
+    });
   });
 
   describe('POST /api/auth/logout', () => {
