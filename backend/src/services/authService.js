@@ -116,37 +116,68 @@ async function refreshSession({ refreshToken }) {
     },
   });
 
-  if (
-    !session ||
-    session.revokedAt ||
-    session.expiresAt <= now ||
-    session.user.status !== 'ACTIVE'
-  ) {
+  if (!session) {
+    throw new Error('Geçersiz veya süresi dolmuş oturum.');
+  }
+
+  // İptal edilmiş bir token tekrar geldiyse çalınmış olabilir:
+  // kullanıcının tüm açık oturumları kapatılır.
+  if (session.revokedAt) {
+    await prisma.session.updateMany({
+      where: {
+        userId: session.userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: now,
+      },
+    });
+
+    throw new Error('Geçersiz veya süresi dolmuş oturum.');
+  }
+
+  if (session.expiresAt <= now || session.user.status !== 'ACTIVE') {
     throw new Error('Geçersiz veya süresi dolmuş oturum.');
   }
 
   const newRefreshToken = createRefreshToken();
-  const newRefreshTokenHash = hashRefreshToken(newRefreshToken);
-  const newExpiry = getRefreshTokenExpiry();
 
-  // Atomik güncelleme: Eski token hâlâ geçerliyse yenile.
-  const updateResult = await prisma.session.updateMany({
-    where: {
-      id: session.id,
-      refreshTokenHash,
-      revokedAt: null,
-      expiresAt: {
-        gt: now,
+  // Eski oturum iptal edilip yerine yenisi açılır. Eski token kaydı
+  // silinmediği için tekrar kullanıldığında yukarıda tespit edilir.
+  const rotated = await prisma.$transaction(async (tx) => {
+    // Atomik güncelleme: Eski token hâlâ geçerliyse iptal et.
+    const updateResult = await tx.session.updateMany({
+      where: {
+        id: session.id,
+        revokedAt: null,
+        expiresAt: {
+          gt: now,
+        },
       },
-    },
-    data: {
-      refreshTokenHash: newRefreshTokenHash,
-      expiresAt: newExpiry,
-    },
+      data: {
+        revokedAt: now,
+      },
+    });
+
+    // Başka bir istek tokenı önce yenilediyse bu istek başarısız olur.
+    if (updateResult.count !== 1) {
+      return false;
+    }
+
+    await tx.session.create({
+      data: {
+        userId: session.userId,
+        refreshTokenHash: hashRefreshToken(newRefreshToken),
+        userAgent: session.userAgent,
+        ipAddress: session.ipAddress,
+        expiresAt: getRefreshTokenExpiry(),
+      },
+    });
+
+    return true;
   });
 
-  // Başka bir istek tokenı önce yenilediyse bu istek başarısız olur.
-  if (updateResult.count !== 1) {
+  if (!rotated) {
     throw new Error('Geçersiz veya süresi dolmuş oturum.');
   }
 
