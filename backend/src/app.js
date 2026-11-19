@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
 const errorMiddleware = require('./middleware/errorMiddleware');
 
 const app = express();
@@ -41,6 +42,7 @@ app.get('/api/health', (req, res) => {
 // Authentication Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // Bulunamayan adresler için 404
 app.use((req, res, next) => {
