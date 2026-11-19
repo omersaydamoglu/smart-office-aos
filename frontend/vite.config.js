@@ -14,4 +14,13 @@ export default defineConfig({
       },
     },
   },
+  // Testler (npm test): tarayıcı yerine jsdom'da çalışır. Mock modu kapalıdır;
+  // gerçek API kodu kullanılır, ağ istekleri testlerde taklit edilir (src/test/api.js).
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    env: { VITE_USE_MOCK: 'false' },
+    css: false,
+    restoreMocks: true,
+  },
 })
