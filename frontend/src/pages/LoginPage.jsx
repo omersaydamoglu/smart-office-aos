@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
+import { AlertCircle, ArrowRight, Building2, Clock, Eye, EyeOff, Lock, LockKeyhole, Mail } from 'lucide-react'
 import { AuthError } from '../api/auth'
 import { useAuth } from '../auth/AuthContext'
 import { homePathFor } from '../auth/roles'
@@ -98,94 +99,133 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login-page">
-      <section className="login-card" aria-labelledby="login-title">
-        <header className="login-brand">
-          <div className="login-logo" aria-hidden="true">AOS</div>
-          <div>
-            <p className="login-product">Smart Office</p>
-            <h1 id="login-title" className="login-title">Giriş yap</h1>
-          </div>
-        </header>
+    <div className="login-page">
+      <main className="login-main">
+        <section className="login-card" aria-labelledby="login-title">
+          <header className="login-brand">
+            <span className="login-logo" aria-hidden="true">
+              <Building2 size={20} />
+            </span>
+            <span className="login-brand__text">
+              <span className="login-product">Smart Office</span>
+              <span className="login-tagline">Akıllı ofis yönetim sistemi</span>
+            </span>
+          </header>
 
-        {formError && (
-          <div className={`login-alert ${isLocked ? 'login-alert--warning' : ''}`} role="alert">
-            <p>{formError}</p>
-            {isLocked && (
-              <p className="login-alert__countdown">
-                Kalan süre: <strong>{formatCountdown(lockSecondsLeft)}</strong>
-              </p>
-            )}
-          </div>
-        )}
+          <h1 id="login-title" className="login-title">Hesabınıza giriş yapın</h1>
+          <p className="login-subtitle">Çalışma alanı, rezervasyon ve ziyaretçi yönetim paneli</p>
 
-        <form className="login-form" onSubmit={handleSubmit} noValidate>
-          <div className="form-field">
-            <label htmlFor="email">
-              E-posta <span className="required" aria-hidden="true">*</span>
-            </label>
-            <input
-              id="email"
-              type="email"
-              name="email"
-              autoComplete="username"
-              placeholder="ornek@sirket.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              aria-invalid={Boolean(fieldErrors.email)}
-              aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-              disabled={isSubmitting}
-            />
-            {fieldErrors.email && (
-              <p id="email-error" className="field-error">{fieldErrors.email}</p>
-            )}
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="password">
-              Şifre <span className="required" aria-hidden="true">*</span>
-            </label>
-            <div className="password-input">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                aria-invalid={Boolean(fieldErrors.password)}
-                aria-describedby={fieldErrors.password ? 'password-error' : undefined}
-                disabled={isSubmitting}
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword((value) => !value)}
-                aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
-                aria-pressed={showPassword}
-              >
-                {showPassword ? 'Gizle' : 'Göster'}
-              </button>
+          {formError && (
+            <div className="login-alert" role="alert">
+              {isLocked ? (
+                <>
+                  <div className="login-alert__row">
+                    <LockKeyhole size={18} aria-hidden="true" />
+                    <div>
+                      <p className="login-alert__title">Giriş geçici olarak engellendi</p>
+                      <p>{formError}</p>
+                    </div>
+                  </div>
+                  <p className="login-alert__countdown">
+                    <span><Clock size={14} aria-hidden="true" /> Kalan süre:</span>
+                    <strong>{formatCountdown(lockSecondsLeft)}</strong>
+                  </p>
+                </>
+              ) : (
+                <div className="login-alert__row">
+                  <AlertCircle size={18} aria-hidden="true" />
+                  <p>{formError}</p>
+                </div>
+              )}
             </div>
-            {fieldErrors.password && (
-              <p id="password-error" className="field-error">{fieldErrors.password}</p>
-            )}
-          </div>
+          )}
 
-          <button
-            type="submit"
-            className="btn btn-primary login-submit"
-            disabled={isSubmitting || isLocked}
-          >
-            {isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'}
-          </button>
+          <form className="login-form" onSubmit={handleSubmit} noValidate>
+            <div className="form-field">
+              <label htmlFor="email">
+                E-posta <span className="required" aria-hidden="true">*</span>
+              </label>
+              <div className="input-with-icon">
+                <Mail size={18} aria-hidden="true" />
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  autoComplete="username"
+                  placeholder="ad.soyad@sirket.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? 'email-error' : undefined}
+                  disabled={isSubmitting}
+                />
+              </div>
+              {fieldErrors.email && (
+                <p id="email-error" className="field-error">{fieldErrors.email}</p>
+              )}
+            </div>
 
-          {/* Parola sıfırlama P1 (Hafta 7) kapsamında eklenecek. */}
-          <a className="login-forgot" href="#" aria-disabled="true" onClick={(event) => event.preventDefault()}>
-            Parolamı unuttum
-          </a>
-        </form>
-      </section>
-    </main>
+            <div className="form-field">
+              <div className="login-label-row">
+                <label htmlFor="password">
+                  Şifre <span className="required" aria-hidden="true">*</span>
+                </label>
+                {/* Parola sıfırlama P1 (Hafta 7) kapsamında eklenecek. */}
+                <a
+                  className="login-forgot"
+                  href="#"
+                  aria-disabled="true"
+                  title="Yakında"
+                  onClick={(event) => event.preventDefault()}
+                >
+                  Parolamı unuttum
+                </a>
+              </div>
+              <div className="input-with-icon password-input">
+                <Lock size={18} aria-hidden="true" />
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={fieldErrors.password ? 'password-error' : undefined}
+                  disabled={isSubmitting}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p id="password-error" className="field-error">{fieldErrors.password}</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-with-icon login-submit"
+              disabled={isSubmitting || isLocked}
+            >
+              {isSubmitting ? 'Giriş yapılıyor…' : (
+                <>
+                  Giriş yap
+                  <ArrowRight size={18} aria-hidden="true" />
+                </>
+              )}
+            </button>
+          </form>
+        </section>
+      </main>
+
+      <footer className="login-footer">© {new Date().getFullYear()} Smart Office</footer>
+    </div>
   )
 }

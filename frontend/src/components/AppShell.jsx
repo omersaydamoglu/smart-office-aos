@@ -4,24 +4,31 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
-import { Bell, ChevronDown, LogOut, Menu, X } from 'lucide-react'
+import { Bell, Building2, ChevronDown, LogOut, Menu, X } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
-import { ROLE_LABELS, homePathFor } from '../auth/roles'
+import { ALL_ROLES, ROLE_LABELS, homePathFor } from '../auth/roles'
 import { bottomTabsForRoles, findPage, sectionsForRoles } from '../navigation'
+import { displayName, initials } from '../utils/person'
 import './AppShell.css'
 
-function displayName(user) {
-  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ')
-  return fullName || user?.email || 'Kullanıcı'
+// Sağ üstte adın altında gösterilecek rol: en yetkili rol (ALL_ROLES sırası).
+function primaryRoleLabel(roles = []) {
+  const role = ALL_ROLES.find((item) => roles.includes(item)) ?? roles[0]
+  return ROLE_LABELS[role] || role || ''
 }
 
-function initials(user) {
-  const name = displayName(user)
-  const parts = name.includes('@') ? [name] : name.split(/\s+/)
-  return parts
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toLocaleUpperCase('tr-TR'))
-    .join('')
+function Brand({ to, onClick }) {
+  return (
+    <Link to={to} className="brand" onClick={onClick}>
+      <span className="brand__logo" aria-hidden="true">
+        <Building2 size={18} />
+      </span>
+      <span className="brand__text">
+        <span className="brand__name">Smart Office</span>
+        <span className="brand__tagline">Akıllı ofis yönetimi</span>
+      </span>
+    </Link>
+  )
 }
 
 function SideNav({ sections, onNavigate }) {
@@ -29,7 +36,7 @@ function SideNav({ sections, onNavigate }) {
     <nav className="sidenav" aria-label="Ana menü">
       {sections.map((section) => (
         <div key={section.id} className="sidenav__section">
-          {sections.length > 1 && <p className="sidenav__title">{section.title}</p>}
+          <p className="sidenav__title">{section.title}</p>
           <ul>
             {section.items.map(({ path, label, icon: Icon }) => (
               <li key={path}>
@@ -75,9 +82,12 @@ function UserMenu({ user, onSignOut }) {
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
+        <span className="user-menu__text">
+          <span className="user-menu__name">{displayName(user)}</span>
+          <span className="user-menu__role">{primaryRoleLabel(user?.roles)}</span>
+        </span>
         <span className="avatar" aria-hidden="true">{initials(user)}</span>
-        <span className="user-menu__name">{displayName(user)}</span>
-        <ChevronDown size={16} aria-hidden="true" />
+        <ChevronDown size={16} aria-hidden="true" className="user-menu__chevron" />
       </button>
 
       {open && (
@@ -151,21 +161,25 @@ export default function AppShell() {
       <a className="skip-link" href="#main-content">İçeriğe atla</a>
 
       <header className="topbar">
-        <Link to={homePathFor(roles)} className="topbar__brand">
-          <span className="topbar__logo" aria-hidden="true">AOS</span>
-          <span className="topbar__product">Smart Office</span>
-        </Link>
+        {/* Telefonda yan menü gizli olduğu için logo üst çubukta görünür. */}
+        <div className="topbar__brand">
+          <Brand to={homePathFor(roles)} />
+        </div>
 
         <div className="topbar__actions">
           {/* Okunmamış sayısı, bildirim API'si gelince (Hafta 4-5) eklenecek. */}
           <Link to="/portal/notifications" className="icon-button" aria-label="Bildirimler">
             <Bell size={20} aria-hidden="true" />
           </Link>
+          <span className="topbar__divider" aria-hidden="true" />
           <UserMenu user={user} onSignOut={signOut} />
         </div>
       </header>
 
       <aside className="sidebar">
+        <div className="sidebar__brand">
+          <Brand to={homePathFor(roles)} />
+        </div>
         <SideNav sections={sections} />
       </aside>
 
@@ -175,7 +189,7 @@ export default function AppShell() {
           <div className="drawer__backdrop" onClick={closeDrawer} />
           <div className="drawer__panel">
             <div className="drawer__header">
-              <span className="topbar__product">Menü</span>
+              <Brand to={homePathFor(roles)} onClick={closeDrawer} />
               <button
                 ref={closeButtonRef}
                 type="button"

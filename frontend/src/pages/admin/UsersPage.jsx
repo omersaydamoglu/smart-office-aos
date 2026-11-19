@@ -9,11 +9,11 @@ import { Plus, Search } from 'lucide-react'
 import PageHeader from '../../components/PageHeader'
 import Pagination from '../../components/Pagination'
 import ConfirmDialog from '../../components/ConfirmDialog'
-import { UserStatusBadge } from '../../components/StatusBadge'
+import { RoleBadges, UserStatusBadge } from '../../components/StatusBadge'
+import PersonCell from '../../components/PersonCell'
 import { EmptyState, ErrorState, ForbiddenState, LoadingState } from '../../components/PageStates'
 import { useToast } from '../../components/ToastContext'
 import { useAuth } from '../../auth/AuthContext'
-import { ROLE_LABELS } from '../../auth/roles'
 import { listUsers, setUserStatus } from '../../api/users'
 import { useApiResource } from '../../hooks/useApiResource'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
@@ -125,17 +125,17 @@ export default function UsersPage() {
                 const isSelf = user.id === currentUser?.id
                 return (
                   <tr key={user.id}>
-                    <td className="cell-strong">
-                      {fullName(user)}
-                      {isSelf && <span className="cell-muted"> (siz)</span>}
-                    </td>
-                    <td className="cell-muted">{user.email}</td>
-                    <td>{user.department?.name ?? <span className="cell-muted">—</span>}</td>
                     <td>
-                      <ul className="role-chips" aria-label="Roller">
-                        {user.roles.map((role) => <li key={role}>{ROLE_LABELS[role] || role}</li>)}
-                      </ul>
+                      <PersonCell
+                        user={user}
+                        highlight={isSelf}
+                        inactive={user.status !== 'ACTIVE'}
+                        suffix={isSelf && <span className="cell-muted"> (siz)</span>}
+                      />
                     </td>
+                    <td className="cell-secondary">{user.email}</td>
+                    <td>{user.department?.name ?? <span className="cell-muted">—</span>}</td>
+                    <td><RoleBadges roles={user.roles} /></td>
                     <td><UserStatusBadge status={user.status} /></td>
                     <td className="cell-actions">
                       <button type="button" className="btn btn-text" onClick={() => setDialog({ type: 'edit', user })}>
@@ -155,7 +155,7 @@ export default function UsersPage() {
                           Pasife al
                         </button>
                       ) : (
-                        <button type="button" className="btn btn-text" onClick={() => setDialog({ type: 'status', user })}>
+                        <button type="button" className="btn btn-text btn-text--primary" onClick={() => setDialog({ type: 'status', user })}>
                           Aktifleştir
                         </button>
                       )}

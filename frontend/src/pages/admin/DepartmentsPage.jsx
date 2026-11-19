@@ -7,7 +7,7 @@ import { Plus, Search } from 'lucide-react'
 import PageHeader from '../../components/PageHeader'
 import Pagination from '../../components/Pagination'
 import ConfirmDialog from '../../components/ConfirmDialog'
-import StatusBadge from '../../components/StatusBadge'
+import { ActiveBadge } from '../../components/StatusBadge'
 import { EmptyState, ErrorState, ForbiddenState, LoadingState } from '../../components/PageStates'
 import { useToast } from '../../components/ToastContext'
 import { listDepartments, updateDepartment } from '../../api/departments'
@@ -119,9 +119,7 @@ export default function DepartmentsPage() {
                   </td>
                   <td>{department.memberCount}</td>
                   <td>
-                    {department.isActive
-                      ? <StatusBadge tone="success">Aktif</StatusBadge>
-                      : <StatusBadge tone="neutral">Pasif</StatusBadge>}
+                    <ActiveBadge isActive={department.isActive} />
                   </td>
                   <td className="cell-actions">
                     <button type="button" className="btn btn-text" onClick={() => setDialog({ type: 'edit', department })}>
@@ -135,7 +133,7 @@ export default function DepartmentsPage() {
                         Pasife al
                       </button>
                     ) : (
-                      <button type="button" className="btn btn-text" onClick={() => setDialog({ type: 'status', department })}>
+                      <button type="button" className="btn btn-text btn-text--primary" onClick={() => setDialog({ type: 'status', department })}>
                         Aktifleştir
                       </button>
                     )}

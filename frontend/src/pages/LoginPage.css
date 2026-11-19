@@ -1,59 +1,82 @@
+/* Giriş ekranı — Stitch "Giriş yap" tasarımı: gri zemin üstünde ortalanmış beyaz kart. */
+
 .login-page {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.login-main {
+  flex: 1;
   display: grid;
   place-items: center;
-  padding: 24px 16px;
-  background: var(--color-bg-subtle);
+  padding: 32px 16px;
 }
 
 .login-card {
   width: 100%;
-  max-width: 420px;
-  padding: 40px 36px;
+  max-width: 440px;
+  padding: 32px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-card);
 }
 
 .login-brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 28px;
 }
 
 .login-logo {
-  width: 48px;
-  height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: var(--color-primary);
   color: #fff;
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.5px;
+}
+
+.login-brand__text {
+  display: flex;
+  flex-direction: column;
 }
 
 .login-product {
-  margin: 0;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.login-tagline {
+  font-size: 12px;
+  font-weight: 500;
   color: var(--color-text-muted);
 }
 
 .login-title {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: 24px;
-  font-weight: 700;
-  color: var(--color-text);
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: -0.015em;
 }
 
+.login-subtitle {
+  margin: 4px 0 24px;
+  color: var(--color-text-secondary);
+}
+
+/* Hata / kilit kutusu */
 .login-alert {
   margin-bottom: 20px;
   padding: 12px 14px;
-  border-radius: 10px;
   border: 1px solid var(--color-danger-border);
+  border-radius: 10px;
   background: var(--color-danger-bg);
   color: var(--color-danger);
   font-size: 14px;
@@ -63,72 +86,132 @@
   margin: 0;
 }
 
-.login-alert--warning {
-  border-color: var(--color-warning-border);
-  background: var(--color-warning-bg);
-  color: var(--color-warning);
+.login-alert__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.login-alert__row svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.login-alert__title {
+  font-weight: 600;
 }
 
 .login-alert__countdown {
-  margin-top: 6px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px !important;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
 }
 
+.login-alert__countdown span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.login-alert__countdown strong {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 15px;
+  color: var(--color-danger);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Form */
 .login-form {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-.password-input {
+.login-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.login-forgot {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: none;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Solda ikon olan giriş alanı */
+.input-with-icon {
   position: relative;
 }
 
+.input-with-icon > svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: var(--color-text-subtle);
+  pointer-events: none;
+}
+
+.input-with-icon input {
+  padding-left: 40px;
+}
+
 .password-input input {
-  padding-right: 76px;
+  padding-right: 48px;
 }
 
 .password-toggle {
   position: absolute;
   top: 50%;
-  right: 6px;
+  right: 4px;
   transform: translateY(-50%);
-  padding: 6px 10px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--color-text-muted);
   cursor: pointer;
 }
 
 .password-toggle:hover {
-  background: var(--color-primary-bg);
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
 }
 
 .login-submit {
+  justify-content: center;
   width: 100%;
   margin-top: 4px;
 }
 
-.login-forgot {
-  align-self: center;
-  font-size: 14px;
+.login-footer {
+  padding: 16px;
+  font-size: 12px;
   color: var(--color-text-muted);
-  text-decoration: none;
-  cursor: not-allowed;
+  text-align: center;
 }
 
 @media (max-width: 480px) {
-  .login-page {
+  .login-main {
     align-items: start;
-    padding-top: 48px;
-    background: var(--color-surface);
+    padding-top: 32px;
   }
 
   .login-card {
-    padding: 8px 4px;
-    border: none;
-    box-shadow: none;
+    padding: 24px 20px;
   }
 }

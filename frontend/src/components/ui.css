@@ -17,17 +17,25 @@
   font-size: 13px;
 }
 
+/* Düz (ghost) buton: tablo satırı eylemleri */
 .btn-text {
   height: 32px;
-  padding: 0 8px;
+  padding: 0 10px;
   border: none;
   background: transparent;
-  color: var(--color-primary);
+  color: var(--color-text-secondary);
   font-size: 13px;
+  font-weight: 500;
 }
 
 .btn-text:hover:not(:disabled) {
-  background: var(--color-primary-bg);
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+}
+
+.btn-text:disabled {
+  color: var(--color-text-subtle);
+  opacity: 1;
 }
 
 .btn-text--danger {
@@ -36,6 +44,16 @@
 
 .btn-text--danger:hover:not(:disabled) {
   background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.btn-text--primary {
+  color: var(--color-primary);
+}
+
+.btn-text--primary:hover:not(:disabled) {
+  background: var(--color-primary-bg);
+  color: var(--color-primary-hover);
 }
 
 /* --- Seçim kutusu ve onay kutuları --- */
@@ -56,7 +74,7 @@
 .toolbar select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-bg);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .form-hint {
@@ -164,35 +182,70 @@
   margin: 0 0 8px;
 }
 
-/* --- Durum rozeti --- */
+/* --- Durum rozeti (DESIGN.md: 12px/500, 1px çerçeve, tam yuvarlak) --- */
 .badge {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   padding: 2px 10px;
+  border: 1px solid transparent;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
-.badge--success { background: #dcfce7; color: #166534; }
-.badge--neutral { background: var(--color-bg-subtle); color: var(--color-text-muted); }
-.badge--info { background: var(--color-primary-bg); color: var(--color-primary); }
-.badge--warning { background: var(--color-warning-bg); color: var(--color-warning); }
-.badge--danger { background: var(--color-danger-bg); color: var(--color-danger); }
+/* Durum noktası (Aktif / Pasif gibi) */
+.badge--dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge--success { background: var(--color-success-bg); border-color: var(--color-success-border); color: var(--color-success); }
+.badge--neutral { background: var(--color-bg); border-color: var(--color-border); color: var(--color-text-muted); }
+.badge--info { background: var(--color-primary-bg); border-color: var(--color-primary-border); color: var(--color-primary); }
+.badge--warning { background: var(--color-warning-bg); border-color: var(--color-warning-border); color: #d97706; }
+.badge--danger { background: var(--color-danger-bg); border-color: var(--color-danger-border); color: #dc2626; }
+
+/* Rol rozetleri: durumdan ayırt edilsin diye çerçevesiz, sade gri */
+.role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.badge--role {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+}
+
+.badge--role-admin {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
 
 /* --- Kart, araç çubuğu, tablo --- */
 .card {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 16px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -223,7 +276,7 @@
 .toolbar__search input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-bg);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .card__body {
@@ -245,24 +298,80 @@
 
 .data-table th,
 .data-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-divider);
   text-align: left;
   vertical-align: middle;
 }
 
 .data-table th {
-  background: var(--color-bg-subtle);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background: var(--color-bg);
+  border-bottom-color: var(--color-border);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-muted);
   white-space: nowrap;
 }
 
+.data-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table th:first-child,
+.data-table td:first-child {
+  padding-left: 24px;
+}
+
+.data-table th:last-child,
+.data-table td:last-child {
+  padding-right: 16px;
+}
+
+.data-table tbody tr {
+  transition: background 0.12s;
+}
+
 .data-table tbody tr:hover {
-  background: #fafbfc;
+  background: var(--color-bg);
+}
+
+/* Ad + baş harf avatarı */
+.person-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.person-cell__name {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.person-cell--inactive {
+  opacity: 0.6;
+}
+
+.initials {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.initials--primary {
+  background: #dbe1ff;
+  color: #004ac6;
 }
 
 .data-table tbody tr:last-child td {
@@ -273,14 +382,23 @@
   color: var(--color-text-muted);
 }
 
+.data-table .cell-secondary {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
 .data-table .cell-strong {
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
 }
 
 .data-table .cell-actions {
   text-align: right;
   white-space: nowrap;
+}
+
+.data-table .cell-actions .btn-text {
+  padding: 0 8px;
 }
 
 .data-table.is-refreshing tbody {
@@ -295,8 +413,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 12px 24px;
   border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
 }
 
 .pagination__summary {
