@@ -82,8 +82,78 @@ export async function login({ email, password }) {
   })
 }
 
+// Oturum süresi dolduğunda (refresh de başarısız olursa) arayüzü haberdar etmek için.
+const sessionExpiredListeners = new Set()
+
+export function onSessionExpired(listener) {
+  sessionExpiredListeners.add(listener)
+  return () => sessionExpiredListeners.delete(listener)
+}
+
+export function notifySessionExpired() {
+  accessToken = null
+  clearMockUser()
+  sessionExpiredListeners.forEach((listener) => listener())
+}
+
+// Refresh token tek kullanımlıktır: aynı token iki kez gönderilirse backend
+// TÜM oturumları kapatır (bkz. backend fix #49). Bu yüzden aynı anda gelen
+// yenileme istekleri tek bir isteği paylaşır. (React StrictMode geliştirmede
+// açılış kodunu iki kez çalıştırdığı için bu koruma şarttır.)
+let refreshPromise = null
+
+export function refreshAccessToken() {
+  if (USE_MOCK) return Promise.resolve(Boolean(accessToken))
+
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const response = await fetch(`${API_BASE}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+        })
+        const body = await readJson(response)
+        accessToken = response.ok ? (body?.data?.accessToken ?? null) : null
+        return Boolean(accessToken)
+      } catch {
+        return false
+      } finally {
+        refreshPromise = null
+      }
+    })()
+  }
+  return refreshPromise
+}
+
+// Sayfa yenilendiğinde: httpOnly çerezdeki refresh token ile yeni access token alıp
+// kullanıcı bilgisini getirir. Oturum yoksa null döner.
+// Not: /users/me şu an ad-soyad döndürmüyor (yalnızca id, e-posta, roller).
+export async function restoreSession() {
+  if (USE_MOCK) {
+    const user = readMockUser()
+    if (user) accessToken = 'mock-access-token'
+    return user
+  }
+
+  const refreshed = await refreshAccessToken()
+  if (!refreshed) return null
+
+  try {
+    const response = await fetch(`${API_BASE}/users/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      credentials: 'include',
+    })
+    if (!response.ok) return null
+    const body = await readJson(response)
+    return body?.data ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function logout() {
   accessToken = null
+  clearMockUser()
 
   if (USE_MOCK) return
 
@@ -127,6 +197,36 @@ const MOCK_USERS = [
 
 const mockState = { failedAttempts: 0, lockedUntil: 0 }
 
+// Yalnızca mock modda: sayfa yenilenince tekrar giriş yapmamak için kullanıcı
+// sekme kapanana kadar sessionStorage'da tutulur. Gerçek modda kullanılmaz.
+const MOCK_USER_KEY = 'aos-mock-user'
+
+function readMockUser() {
+  try {
+    const raw = sessionStorage.getItem(MOCK_USER_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveMockUser(user) {
+  try {
+    sessionStorage.setItem(MOCK_USER_KEY, JSON.stringify(user))
+  } catch {
+    // Depolama kapalıysa sorun değil; yenilemede tekrar giriş istenir.
+  }
+}
+
+function clearMockUser() {
+  if (!USE_MOCK) return
+  try {
+    sessionStorage.removeItem(MOCK_USER_KEY)
+  } catch {
+    // yok say
+  }
+}
+
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -157,5 +257,6 @@ async function mockLogin({ email, password }) {
 
   mockState.failedAttempts = 0
   accessToken = 'mock-access-token'
+  saveMockUser(match.user)
   return match.user
 }

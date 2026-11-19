@@ -1,45 +1,62 @@
-import { useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import AuthProvider from './auth/AuthProvider'
+import { useAuth } from './auth/AuthContext'
+import { RequireAuth, RequireRole } from './auth/guards'
+import { homePathFor } from './auth/roles'
+import { NAV_SECTIONS } from './navigation'
+import AppShell from './components/AppShell'
+import { NotFoundState } from './components/PageStates'
 import LoginPage from './pages/LoginPage'
-import { logout } from './api/auth'
-import './App.css'
+import PlaceholderPage from './pages/PlaceholderPage'
 
-const ROLE_LABELS = {
-  ADMIN: 'Yönetici',
-  RECEPTION: 'Resepsiyon',
-  DEPT_MANAGER: 'Departman yöneticisi',
-  EMPLOYEE: 'Çalışan',
+// Hazır olan ekranlar burada adreslerine bağlanır; listede olmayanlar
+// "Bu ekran hazırlanıyor" sayfasını gösterir. Örn. #42 için:
+//   '/admin/users': UsersPage,
+const PAGE_COMPONENTS = {}
+
+// "/" adresi: kullanıcıyı rolüne göre kendi ana sayfasına gönder.
+function HomeRedirect() {
+  const { roles } = useAuth()
+  return <Navigate to={homePathFor(roles)} replace />
 }
 
-function App() {
-  const [user, setUser] = useState(null)
-
-  async function handleLogout() {
-    await logout()
-    setUser(null)
-  }
-
-  if (!user) {
-    return <LoginPage onLoginSuccess={setUser} />
-  }
-
-  // Geçici karşılama ekranı: rol bazlı paneller (admin, resepsiyon, çalışan portalı)
-  // sonraki adımlarda buraya eklenecek.
+export default function App() {
   return (
-    <main className="welcome">
-      <div className="welcome-card">
-        <h1>Hoş geldin, {user.firstName} {user.lastName}</h1>
-        <p className="welcome-meta">{user.email}</p>
-        <ul className="welcome-roles">
-          {user.roles.map((role) => (
-            <li key={role}>{ROLE_LABELS[role] || role}</li>
-          ))}
-        </ul>
-        <button type="button" className="btn btn-secondary" onClick={handleLogout}>
-          Çıkış yap
-        </button>
-      </div>
-    </main>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+
+          <Route
+            element={
+              <RequireAuth>
+                <AppShell />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<HomeRedirect />} />
+
+            {NAV_SECTIONS.flatMap((section) =>
+              section.items.map((item) => {
+                const Page = PAGE_COMPONENTS[item.path]
+                return (
+                  <Route
+                    key={item.path}
+                    path={item.path}
+                    element={
+                      <RequireRole roles={section.roles}>
+                        {Page ? <Page /> : <PlaceholderPage title={item.label} sectionTitle={section.title} />}
+                      </RequireRole>
+                    }
+                  />
+                )
+              }),
+            )}
+
+            <Route path="*" element={<NotFoundState />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
-
-export default App

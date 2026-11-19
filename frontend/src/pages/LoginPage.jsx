@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
-import { login, AuthError } from '../api/auth'
+import { Navigate, useLocation, useNavigate } from 'react-router'
+import { AuthError } from '../api/auth'
+import { useAuth } from '../auth/AuthContext'
+import { homePathFor } from '../auth/roles'
+import { canAccessPath } from '../navigation'
+import { FullPageLoader } from '../components/PageStates'
 import './LoginPage.css'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -10,7 +15,19 @@ function formatCountdown(totalSeconds) {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-export default function LoginPage({ onLoginSuccess }) {
+// Girişten sonra nereye gidilecek: önce açılmak istenen sayfa (yetkisi varsa),
+// yoksa rolüne göre ana sayfa (ADMIN -> /admin, RECEPTION -> /reception, diğerleri -> /portal).
+function redirectTarget(user, from) {
+  const roles = user?.roles ?? []
+  if (from && canAccessPath(roles, from)) return from
+  return homePathFor(roles)
+}
+
+export default function LoginPage() {
+  const { status, user, signIn } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from?.pathname
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -54,8 +71,9 @@ export default function LoginPage({ onLoginSuccess }) {
 
     setIsSubmitting(true)
     try {
-      const user = await login({ email: email.trim(), password })
-      onLoginSuccess(user)
+      const signedInUser = await signIn({ email: email.trim(), password })
+      navigate(redirectTarget(signedInUser, from), { replace: true })
+      return
     } catch (error) {
       if (error instanceof AuthError && error.status === 429) {
         setLockSecondsLeft(error.retryAfterSeconds)
@@ -67,6 +85,16 @@ export default function LoginPage({ onLoginSuccess }) {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  useEffect(() => {
+    document.title = 'Giriş yap · Smart Office'
+  }, [])
+
+  // Açılışta oturum kontrolü sürerken bekle; zaten giriş yapılmışsa formu gösterme.
+  if (status === 'loading') return <FullPageLoader />
+  if (status === 'authenticated') {
+    return <Navigate to={redirectTarget(user, from)} replace />
   }
 
   return (
