@@ -15,6 +15,14 @@ export const ROLE_LABELS = {
   EMPLOYEE: 'Çalışan',
 }
 
+// Rol seçiminde her rolün altında görünen kısa açıklama (docs/rol-yetki-matrisi.md).
+export const ROLE_DESCRIPTIONS = {
+  ADMIN: 'Kullanıcı, rol, departman ve sistem yönetimi',
+  RECEPTION: 'Ziyaretçi kabulü, QR tarama ve kargo',
+  DEPT_MANAGER: 'Kendi departmanının onayları ve raporları',
+  EMPLOYEE: 'Kendi davet, devam, izin ve rezervasyon işlemleri',
+}
+
 export function hasAnyRole(userRoles = [], allowedRoles = []) {
   return allowedRoles.some((role) => userRoles.includes(role))
 }

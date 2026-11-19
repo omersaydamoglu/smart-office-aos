@@ -5,8 +5,7 @@
 //   VITE_USE_MOCK=true
 // yazın. Bu durumda istekler sahte veriyle yanıtlanır (seed kullanıcıları).
 
-const API_BASE = '/api'
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
+import { API_BASE, USE_MOCK } from './config'
 
 // Access token yalnızca bellekte tutulur (localStorage'a yazılmaz, XSS riskini azaltır).
 // Refresh token backend tarafından httpOnly çerez olarak ayarlanır.
@@ -200,6 +199,11 @@ const mockState = { failedAttempts: 0, lockedUntil: 0 }
 // Yalnızca mock modda: sayfa yenilenince tekrar giriş yapmamak için kullanıcı
 // sekme kapanana kadar sessionStorage'da tutulur. Gerçek modda kullanılmaz.
 const MOCK_USER_KEY = 'aos-mock-user'
+
+// Mock API (mockAdmin.js) "kendi hesabını pasife alamazsın" gibi kontroller için kullanır.
+export function getMockSessionUser() {
+  return readMockUser()
+}
 
 function readMockUser() {
   try {

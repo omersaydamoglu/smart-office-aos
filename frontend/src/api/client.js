@@ -4,8 +4,7 @@
 // - Hataları ApiError olarak fırlatır; ekranlar status'a göre (403, 404, 0 = ağ) durum gösterir.
 
 import { getAccessToken, refreshAccessToken, notifySessionExpired } from './auth'
-
-const API_BASE = '/api'
+import { API_BASE } from './config'
 
 export class ApiError extends Error {
   constructor(message, { status, details } = {}) {
@@ -77,4 +76,14 @@ export async function apiFetch(path, { method = 'GET', body, signal } = {}) {
   }
 
   return data
+}
+
+// { page: 2, search: '' } -> "?page=2" (boş değerler atlanır)
+export function toQuery(params = {}) {
+  const query = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') query.set(key, String(value))
+  })
+  const text = query.toString()
+  return text ? `?${text}` : ''
 }
