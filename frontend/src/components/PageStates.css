@@ -1,0 +1,108 @@
+/* Boş / hata / 403 / 404 kutusu */
+.state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 480px;
+  margin: 48px auto;
+  padding: 0 16px;
+  text-align: center;
+}
+
+.state-box__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+
+.state-box--danger .state-box__icon {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.state-box--warning .state-box__icon {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.state-box__title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.state-box__text {
+  margin-top: 8px;
+  color: var(--color-text-muted);
+  font-size: 15px;
+}
+
+.state-box__text p {
+  margin: 0 0 4px;
+}
+
+.state-box__code {
+  font-size: 13px;
+}
+
+.state-box__actions {
+  margin-top: 20px;
+}
+
+/* Yükleniyor: iskelet satırları */
+.state-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.state-skeleton__row {
+  height: 44px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--color-bg-subtle) 0%, var(--color-border) 50%, var(--color-bg-subtle) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.state-skeleton__row:nth-child(3n) {
+  width: 70%;
+}
+
+@keyframes skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Açılışta tam sayfa yükleniyor */
+.state-fullpage {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background: var(--color-bg-subtle);
+}
+
+.state-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border-strong);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state-skeleton__row,
+  .state-spinner {
+    animation-duration: 0s;
+    animation-iteration-count: 1;
+  }
+}
