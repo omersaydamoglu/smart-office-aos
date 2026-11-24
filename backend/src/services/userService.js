@@ -4,6 +4,7 @@ const prisma = require('../config/prisma');
 
 const PASSWORD_HASH_ROUNDS = 12;
 const ADMIN_ROLE = 'ADMIN';
+const MANAGER_ROLE = 'DEPT_MANAGER';
 const MAX_TX_RETRIES = 3;
 
 const userInclude = {
@@ -93,6 +94,41 @@ function audit(tx, { actor, action, entityId, metadata }) {
       ipAddress: actor.ipAddress,
     },
   });
+}
+
+// Departman yöneticisi aktif, DEPT_MANAGER rollü ve departmanın üyesi olmalıdır.
+// Kullanıcı bu koşullardan birini kaybettiğinde yönettiği departmanlarda yöneticilik
+// düşürülür ve her departman için denetim kaydı yazılır.
+async function releaseManagedDepartments(tx, { userId, actor, reason, exceptDepartmentId }) {
+  const where = { managerId: userId };
+
+  if (exceptDepartmentId) {
+    where.id = { not: exceptDepartmentId };
+  }
+
+  const departments = await tx.department.findMany({ where, select: { id: true } });
+
+  if (departments.length === 0) {
+    return;
+  }
+
+  await tx.department.updateMany({
+    where: { id: { in: departments.map((department) => department.id) } },
+    data: { managerId: null },
+  });
+
+  for (const department of departments) {
+    await tx.auditLog.create({
+      data: {
+        actorId: actor.id,
+        action: 'DEPARTMENT_MANAGER_CHANGED',
+        entityType: 'DEPARTMENT',
+        entityId: department.id,
+        metadata: { from: userId, to: null, reason },
+        ipAddress: actor.ipAddress,
+      },
+    });
+  }
 }
 
 function mapUniqueEmailError(error) {
@@ -200,6 +236,16 @@ async function updateUser(id, changes, actor) {
 
       const user = await tx.user.update({ where: { id }, data, include: userInclude });
 
+      // Başka departmana taşınan ya da departmandan çıkarılan kullanıcı eski departmanını yönetemez.
+      if ('departmentId' in data && data.departmentId !== existing.departmentId) {
+        await releaseManagedDepartments(tx, {
+          userId: id,
+          actor,
+          reason: 'DEPARTMENT_CHANGED',
+          exceptDepartmentId: data.departmentId,
+        });
+      }
+
       await audit(tx, {
         actor,
         action: 'USER_UPDATED',
@@ -238,12 +284,14 @@ async function setUserStatus(id, status, actor) {
 
     const user = await tx.user.update({ where: { id }, data: { status }, include: userInclude });
 
-    // Pasife alınan kullanıcının açık oturumları hemen kapatılır.
+    // Pasife alınan kullanıcının açık oturumları hemen kapatılır ve yöneticilikleri düşer.
     if (status === 'INACTIVE') {
       await tx.session.updateMany({
         where: { userId: id, revokedAt: null },
         data: { revokedAt: new Date() },
       });
+
+      await releaseManagedDepartments(tx, { userId: id, actor, reason: 'USER_DEACTIVATED' });
     }
 
     await audit(tx, {
@@ -282,6 +330,10 @@ async function setUserRoles(id, roles, actor) {
 
     await tx.userRole.deleteMany({ where: { userId: id } });
     await tx.userRole.createMany({ data: roleIds.map((roleId) => ({ userId: id, roleId })) });
+
+    if (previousRoles.includes(MANAGER_ROLE) && !roles.includes(MANAGER_ROLE)) {
+      await releaseManagedDepartments(tx, { userId: id, actor, reason: 'ROLE_REMOVED' });
+    }
 
     await audit(tx, {
       actor,
