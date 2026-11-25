@@ -8,7 +8,7 @@ jest.mock('../src/config/prisma', () => ({
     update: jest.fn(),
   },
   role: { findMany: jest.fn() },
-  department: { findUnique: jest.fn() },
+  department: { findUnique: jest.fn(), findMany: jest.fn(), updateMany: jest.fn() },
   userRole: { deleteMany: jest.fn(), createMany: jest.fn() },
   session: { updateMany: jest.fn() },
   auditLog: { create: jest.fn() },
@@ -62,6 +62,8 @@ describe('Kullanıcı servisi (#38)', () => {
     );
     prisma.user.update.mockImplementation(({ data }) => Promise.resolve({ ...dbUser(), ...data }));
     prisma.auditLog.create.mockResolvedValue({});
+    prisma.department.findMany.mockResolvedValue([]);
+    prisma.department.updateMany.mockResolvedValue({ count: 0 });
   });
 
   describe('listUsers / getUser', () => {
@@ -284,6 +286,97 @@ describe('Kullanıcı servisi (#38)', () => {
     test('Olmayan kullanıcı 404', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
       await expect(setUserRoles(TARGET_ID, ['EMPLOYEE'], actor)).rejects.toMatchObject({ statusCode: 404 });
+    });
+  });
+
+  describe('Departman yöneticiliğinin tutarlılığı', () => {
+    beforeEach(() => {
+      prisma.department.findMany.mockResolvedValue([{ id: 'dept-1' }]);
+    });
+
+    function expectManagershipReleased(reason, where = { managerId: TARGET_ID }) {
+      expect(prisma.department.findMany).toHaveBeenCalledWith({ where, select: { id: true } });
+      expect(prisma.department.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['dept-1'] } },
+        data: { managerId: null },
+      });
+      expect(prisma.auditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'DEPARTMENT_MANAGER_CHANGED',
+          entityType: 'DEPARTMENT',
+          entityId: 'dept-1',
+          metadata: { from: TARGET_ID, to: null, reason },
+        }),
+      });
+    }
+
+    test('Pasife alınan yöneticinin yöneticiliği düşmeli', async () => {
+      prisma.user.findUnique.mockResolvedValue(dbUser({ roles: ['DEPT_MANAGER'] }));
+
+      await setUserStatus(TARGET_ID, 'INACTIVE', actor);
+
+      expectManagershipReleased('USER_DEACTIVATED');
+    });
+
+    test('Yeniden aktif yapılan kullanıcıda departmanlara dokunulmamalı', async () => {
+      prisma.user.findUnique.mockResolvedValue(dbUser({ status: 'INACTIVE', roles: ['DEPT_MANAGER'] }));
+
+      await setUserStatus(TARGET_ID, 'ACTIVE', actor);
+
+      expect(prisma.department.updateMany).not.toHaveBeenCalled();
+    });
+
+    test('DEPT_MANAGER rolü kaldırılınca yöneticilik düşmeli', async () => {
+      prisma.user.findUnique.mockResolvedValue(dbUser({ roles: ['DEPT_MANAGER', 'EMPLOYEE'] }));
+
+      await setUserRoles(TARGET_ID, ['EMPLOYEE'], actor);
+
+      expectManagershipReleased('ROLE_REMOVED');
+    });
+
+    test('DEPT_MANAGER rolü korunursa yöneticilik düşmemeli', async () => {
+      prisma.user.findUnique.mockResolvedValue(dbUser({ roles: ['DEPT_MANAGER'] }));
+
+      await setUserRoles(TARGET_ID, ['DEPT_MANAGER', 'EMPLOYEE'], actor);
+
+      expect(prisma.department.findMany).not.toHaveBeenCalled();
+      expect(prisma.department.updateMany).not.toHaveBeenCalled();
+    });
+
+    test('Başka departmana taşınan yöneticinin eski departmandaki yöneticiliği düşmeli', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...dbUser(), departmentId: 'dept-1' });
+      prisma.department.findUnique.mockResolvedValue({ id: 'dept-2' });
+
+      await updateUser(TARGET_ID, { departmentId: 'dept-2' }, actor);
+
+      expectManagershipReleased('DEPARTMENT_CHANGED', { managerId: TARGET_ID, id: { not: 'dept-2' } });
+    });
+
+    test('Departmandan çıkarılan (null) yöneticinin yöneticiliği düşmeli', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...dbUser(), departmentId: 'dept-1' });
+
+      await updateUser(TARGET_ID, { departmentId: null }, actor);
+
+      expectManagershipReleased('DEPARTMENT_CHANGED');
+    });
+
+    test('Departmanı değişmeyen güncellemede departmanlara dokunulmamalı', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...dbUser(), departmentId: 'dept-1' });
+      prisma.department.findUnique.mockResolvedValue({ id: 'dept-1' });
+
+      await updateUser(TARGET_ID, { firstName: 'Yeni', departmentId: 'dept-1' }, actor);
+
+      expect(prisma.department.findMany).not.toHaveBeenCalled();
+    });
+
+    test('Yönettiği departman yoksa güncelleme ve ek kayıt yapılmamalı', async () => {
+      prisma.department.findMany.mockResolvedValue([]);
+      prisma.user.findUnique.mockResolvedValue(dbUser({ roles: ['DEPT_MANAGER'] }));
+
+      await setUserStatus(TARGET_ID, 'INACTIVE', actor);
+
+      expect(prisma.department.updateMany).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
     });
   });
 });
